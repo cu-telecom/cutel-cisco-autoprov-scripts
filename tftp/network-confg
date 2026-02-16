@@ -1,0 +1,24 @@
+version 15.1
+!
+no aaa new-model
+username bootstrap privilege 15 password 0 bootstrap
+!
+hostname bootstrap
+ip domain name example.org
+!
+file prompt quiet
+!
+line vty 0 4
+ privilege level 15
+ transport input all
+ login local
+!
+event manager applet BOOTSTRAP-AUTOPROV
+ event syslog pattern "SYS-5-RESTART" maxrun 300000
+ action 10 cli command "enable"
+ action 20 cli command "terminal length 0"
+ action 30 syslog msg "Downloading library.tar"
+ action 40 cli command "archive tar /xtract tftp://100.100.100.100/library.tar library"
+ action 50 syslog msg "Running setup-autoprov.tcl"
+ action 60 cli command "tclsh library/setup-autoprov.tcl stateless"
+end

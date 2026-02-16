@@ -1,0 +1,34 @@
+# Library artifacts
+*.tar
+*.tar.gz
+*.tgz
+*.gz
+*.zip
+
+# OS Generated Files
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Windows recycle bin
+$RECYCLE.BIN/
+
+# macOS
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+.nfs*
+
+# Editor / IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+
+
