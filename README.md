@@ -120,8 +120,6 @@ Rollback Done
 
 If it fails it will reconfigure BOOTSTRAP-AUTOPROV to re-try every 5 minutes.
 
-**Note:** This EEM applet _must_ exist in the downloaded config. If it doesn't it will remove the applet before its finished running, stopping it in its tracks.
-
 ## License
 
 This project is licensed under the MIT License
