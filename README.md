@@ -11,6 +11,7 @@ A selection of tcl scripts aimed at making "auto-provisioning" Cisco equipment e
 * There's no support for authentication on the HTTP server at present. I'm going over a private, encrypted network so it's less critical.
 * Pulling configs over TFTP / HTTP is inherently insecure. I *might* explore using SCP in future.
 * The scripts probably aren't catching all the potential errors very well.
+* **config replace works well for the initial config, but subsequent changes will trip it up**
 
 ## Bootstrapping
 
