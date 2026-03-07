@@ -1,5 +1,5 @@
 # Run an EEM applet and return 0 on success, 1 on failure.
-# Failure is detected by seeing "Error"anywhere in combined stdout/stderr.
+# Failure is detected by seeing "Error" anywhere in combined stdout/stderr.
 #
 # Usage:
 #   if {[run_eem_and_check "CONFIG-REPLACE"]} {
@@ -23,10 +23,8 @@ proc run_eem_and_check {applet_name} {
     set rc "$out\n$err"
 
     if {[regexp -nocase {error|failed} $rc]} {
-        exec "send log ERROR: EEM $applet_name FAILED"
         return 1
     } else {
-        exec "send log EEM $applet_name SUCCESS"
         return 0
     }
 }

@@ -1,12 +1,9 @@
 version 15.1
 !
-no aaa new-model
 username bootstrap privilege 15 password 0 bootstrap
 !
 hostname bootstrap
 ip domain name example.org
-!
-file prompt quiet
 !
 line vty 0 4
  privilege level 15
@@ -15,10 +12,15 @@ line vty 0 4
 !
 event manager applet BOOTSTRAP-AUTOPROV
  event syslog pattern "SYS-5-RESTART" maxrun 300000
- action 10 cli command "enable"
- action 20 cli command "terminal length 0"
- action 30 syslog msg "Downloading library.tar"
- action 40 cli command "archive tar /xtract tftp://100.100.100.100/library.tar library"
- action 50 syslog msg "Running setup-autoprov.tcl"
- action 60 cli command "tclsh library/setup-autoprov.tcl stateless"
+ action 0.0 cli command "enable"
+ action 0.1 cli command "terminal length 0"
+ action 0.2 syslog msg "Downloading tcl library"
+ action 0.3 cli command "archive tar /xtract http://100.64.0.1:8080/library.tar library"
+ action 0.4 syslog msg "Running setup-autoprov.tcl"
+ action 0.5 cli command "tclsh library/setup-autoprov.tcl"
+ ! The applet will only get this far if setup-autoprov fails
+ action 0.6 cli command "configure terminal"
+ action 0.7 cli command "event manager applet BOOTSTRAP-AUTOPROV"
+ action 0.8 cli command "event timer watchdog time 300 maxrun 300000"
+ action 0.9 cli command "end"
 end
