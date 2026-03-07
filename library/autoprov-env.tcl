@@ -1,6 +1,15 @@
+# Set the mode. Can be normal or stateless
+set mode "stateless"
 
-# The full URL to download library.tar
-set library_url_full "tftp://100.100.100.100/library.tar"
+# The URL prefix to download the token. Include the / at the end!
+set token_url "tftp://100.100.100.100/tokens"
+
+# Set the url_scheme to download configs. Can be scp or http
+set url_scheme "scp"
 
 # The URL prefix for downloading configs. Include the / at the end!
-set config_url_prefix "http://100.100.100.100:8080/autoprov/startup/"
+set http_url_prefix "100.100.100.100:8080/autoprov/startup/"
+
+# The URL for downloading configs via scp. Dont include the scheme or user!
+set scp_url_prefix "100.64.0.1/" 
+

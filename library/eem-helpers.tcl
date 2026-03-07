@@ -22,7 +22,7 @@ proc run_eem_and_check {applet_name} {
     # Combine for parsing / debugging
     set rc "$out\n$err"
 
-    if {[regexp -nocase {error|the input file is not a valid config file} $rc]} {
+    if {[regexp -nocase {error|failed} $rc]} {
         exec "send log ERROR: EEM $applet_name FAILED"
         return 1
     } else {
@@ -59,30 +59,23 @@ proc disable_eem_applet {name} {
 # Creates the CONFIG-REPLACE applet 
 proc create_config_replace_applet {} {
 
-    # This is quite a lot of EEM. I previously tried catching the errors in TCL but when the EEM applet
-    # exits it takes down TCL with it, so we have to do everything inside the applet.
-
     catch { ios_config "no event manager applet CONFIG-REPLACE" }
+
+    exec "send log Creating CONFIG-REPLACE EEM applet"
 
     set cmd "event manager applet CONFIG-REPLACE"
     set cmd_params [list \
-        {event none} \
-        {action 10  cli command "enable"} \
-        {action 20  cli command "terminal length 0"} \
-        {action 30  set _url "$_none_arg1"} \
-        {action 40  cli command "configure replace $_url force"} \
-        {action 45  set _out "$_cli_result"} \
-        {action 46  regexp "([Ee][Rr][Rr][Oo][Rr]|[Tt]he input file is not a valid config file)" "$_out" _m} \
-        {action 47  if $_regexp_result eq "1"} \
-        {action 48   syslog msg "CFG-REPLACE FAILED. Scheduling retry in 5 minutes. Output: $_out"} \
-        {action 49   cli command "configure terminal"} \
-        {action 50   cli command "event manager applet BOOTSTRAP-AUTOPROV"} \
-        {action 51   cli command "event timer watchdog time 300 maxrun 300000"} \
-        {action 52   cli command "no action 30"} \
-        {action 53   cli command "no action 40"} \
-        {action 54   cli command "end"} \
-        {action 55  end} \
-        {action 60  syslog msg "CFG-REPLACE output: $_out"} \
+        {event none maxrun 300000} \
+        {action 10 cli command "enable"} \
+        {action 20 cli command "terminal length 0"} \
+        {action 30 set _url "$_none_arg1"} \
+        {action 40 cli command "configure replace $_url force"} \
+        {action 45 set _out "$_cli_result"} \
+        {action 46 regexp "([Ee][Rr][Rr][Oo][Rr]|[Tt]he input file is not a valid config file|[Ff]ailed)" "$_out" _m} \
+        {action 47 if $_regexp_result eq "1"} \
+        {action 48  puts "CFG-REPLACE FAILED. Output: $_out"} \
+        {action 49  syslog msg "CFG-REPLACE FAILED. Output: $_out"} \
+        {action 56 end} \
     ]
 
     foreach param $cmd_params {
@@ -95,4 +88,29 @@ proc create_config_replace_applet {} {
     return 0
 }
 
+# Creates the BOOTSTRAP-AUTOPROV applet 
+proc create_bootstrap_autoprov_applet {} {
 
+    catch { ios_config "no event manager applet BOOTSTRAP-AUTOPROV" }
+
+    exec "send log Creating BOOTSTRAP-AUTOPROV EEM applet"
+
+    set cmd "event manager applet BOOTSTRAP-AUTOPROV"
+    set cmd_params [list \
+        {event timer watchdog time 300 maxrun 300000} \
+        {action 10 cli command "enable"} \
+        {action 20 cli command "terminal length 0"} \
+        {action 30 syslog msg "Running setup-autoprov.tcl"} \
+        {action 40 cli command "tclsh library/setup-autoprov.tcl"} \
+        {end} \
+    ]
+
+    foreach param $cmd_params {
+        if {[catch { ios_config $cmd $param } err]} {
+            catch { exec "send log FAIL: Failed to create BOOTSTRAP-AUTOPROV applet '$param' : $err" }
+            return 1
+        }
+    }
+
+    return 0
+}

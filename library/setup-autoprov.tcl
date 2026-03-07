@@ -2,9 +2,9 @@ source library/autoprov-env.tcl
 source library/var-parsers.tcl
 source library/manage-ssh.tcl
 source library/manage-router.tcl
+source library/manage-ztp-key.tcl
 source library/eem-helpers.tcl
 source library/http-helpers.tcl
-source library/manage-router.tcl
 
 # Get some vars, these vary between VG310 and VG2XX
 
@@ -37,43 +37,49 @@ exec "send log model: $model path: $path interface: $interface MAC: $mac"
 # Manage SSH
 manage_ssh
 
-set mode normal
-catch { set mode [lindex $argv 0] }
+# Manage the token
+manage_ztp_key "${token_url}/${mac}"
+
+# Are we using HTTP or SCP to download the config?
+if {[string equal -nocase $url_scheme http]} {
+    set download_url "http://${http_url_prefix}${mac}.cfg"
+} else {
+    set scp_user "u[string tolower $mac]"
+    set scp_password [read_ztp_key]
+    set download_url "scp://${scp_user}:${scp_password}@${scp_url_prefix}${mac}.cfg"
+}
+
+exec "send log Mode selected: ${mode}"
 
 # Are we in stateless mode?
 if {[string equal -nocase $mode stateless]} {
 
-    exec "send log Were in stateless mode, so run configure-replace"
-
     create_config_replace_applet
 
     # Run config-replace 
-
-    set rc [run_eem_and_check "CONFIG-REPLACE ${config_url_prefix}${mac}.cfg"]
+    exec "send log Running configure-replace"
+    set rc [run_eem_and_check "CONFIG-REPLACE ${download_url}"]
 
     if {$rc != 0} {
-        exec "send log ERROR: configure replace failed"
-        exec "send log ERROR: Reconfiguring BOOTSTRAP-AUTOPROV to retry every 5 minutes"
+        exec "send log ERROR: configure replace failed, reconfiguring BOOTSTRAP-AUTOPROV to retry every 5 minutes"
 
-        ios_config "event manager applet BOOTSTRAP-AUTOPROV" "event timer watchdog time 300 maxrun 300000"
-
-        # Disable downloading the library again to reduce flash wear
-        ios_config "event manager applet BOOTSTRAP-AUTOPROV" "no action 0.2"
-        ios_config "event manager applet BOOTSTRAP-AUTOPROV" "no action 0.3"
-
+        create_bootstrap_autoprov_applet
         return
+
+    } else {
+        exec "send log configure replace successful"
     }
 
 } else {
 
-    exec "send log We're in normal mode, so copy the config and reload"
+    exec "send log Copying the config and reloading"
 
     # Disable prompting when we copy run start
     ios_config "file prompt quiet"
 
     # Fetch the startup config using the MAC e.g http://autoprov.cutel.net/startup/$mac.cfg
-    exec "send log Downloading the startup-config from ${config_url_prefix}${mac}.cfg and saving to startup-config"
-    set rc [ios_copy ${config_url_prefix}${mac}.cfg startup-config]
+    exec "send log Downloading the startup-config with ${url_scheme} and saving to startup-config"
+    set rc [ios_copy ${download_url} startup-config]
 
     if {$rc != 0} {
         exec "send log ERROR: startup-config download failed."
