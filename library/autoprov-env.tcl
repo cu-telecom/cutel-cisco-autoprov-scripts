@@ -1,8 +1,8 @@
 # Set the mode. Can be normal or stateless
 set mode "stateless"
 
-# The URL prefix to download the token. Include the / at the end!
-set token_url "tftp://100.100.100.100/tokens"
+# The URL prefix to download the SCP password Include the / at the end!
+set scp_password_url "tftp://100.100.100.100/scp_passwords"
 
 # Set the url_scheme to download configs. Can be scp or http
 set url_scheme "scp"

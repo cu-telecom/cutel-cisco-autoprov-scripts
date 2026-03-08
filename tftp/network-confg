@@ -11,7 +11,7 @@ line vty 0 4
  login local
 !
 event manager applet BOOTSTRAP-AUTOPROV
- event syslog pattern "SYS-5-RESTART" maxrun 300000
+ event timer watchdog time 30 maxrun 300000
  action 0.0 cli command "enable"
  action 0.1 cli command "terminal length 0"
  action 0.2 syslog msg "Downloading tcl library"

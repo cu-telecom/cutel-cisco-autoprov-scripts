@@ -2,7 +2,7 @@ source library/autoprov-env.tcl
 source library/var-parsers.tcl
 source library/manage-ssh.tcl
 source library/manage-router.tcl
-source library/manage-ztp-key.tcl
+source library/manage-scp-pass.tcl
 source library/eem-helpers.tcl
 source library/http-helpers.tcl
 
@@ -37,15 +37,15 @@ exec "send log model: $model path: $path interface: $interface MAC: $mac"
 # Manage SSH
 manage_ssh
 
-# Manage the token
-manage_ztp_key "${token_url}/${mac}"
+# Manage the SCP password
+manage_scp_pass "${scp_password_url}/${mac}"
 
 # Are we using HTTP or SCP to download the config?
 if {[string equal -nocase $url_scheme http]} {
     set download_url "http://${http_url_prefix}${mac}.cfg"
 } else {
     set scp_user "u[string tolower $mac]"
-    set scp_password [read_ztp_key]
+    set scp_password [read_scp_pass]
     set download_url "scp://${scp_user}:${scp_password}@${scp_url_prefix}${mac}.cfg"
 }
 

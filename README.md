@@ -1,3 +1,4 @@
+
 # cutel-cisco-autoprov-scripts
 
 A selection of tcl scripts aimed at making "auto-provisioning" Cisco equipment easier. 
@@ -8,10 +9,9 @@ A selection of tcl scripts aimed at making "auto-provisioning" Cisco equipment e
 * It's assumed you have configs on a web server somewhere. This isn't currently covered in this project, so you will have to draw the rest of the owl.
 * The scripts have only been tested on the Cisco VG224 and Cisco VG310s.
 * This might be a terrible idea. Running `configure replace` with the wrong config could lock you out of your system.
-* There's no support for authentication on the HTTP server at present. I'm going over a private, encrypted network so it's less critical.
-* Pulling configs over TFTP / HTTP is inherently insecure. I *might* explore using SCP in future.
+* These scripts are aimed at vintage equipment with limited HTTPS support. In an effort to make things slightly more secure, the configs are downloaded via SCP. This requires the router to be able to download and store the password, which **must** be done over a secure network.
 * The scripts probably aren't catching all the potential errors very well.
-* **config replace works well for the initial config, but subsequent changes will trip it up**
+* **config replace works well for the initial config, but subsequent changes will trip it up if you're not careful**
 
 ## Bootstrapping
 
@@ -32,10 +32,14 @@ You'll see `tftp/network-confg` contains an EEM applet that downloads a library 
 ### Configures SSH
 
 * If there isn't an SSH key in the running config it will attempt to restore it from the flash.
-* If theres no key in the flash, it will generate a new one.
+* If there's no key in the flash, it will generate a new one.
 * Once there's a key, it enables SSH version 2
 
-### Downloads a config file from a web server and applies it
+### Manages the SCP password
+
+* If an SCP password file isn't present, it will download it.
+
+### Downloads a config file and applies it
 
 I tried a few approaches, however: 
 
@@ -67,7 +71,7 @@ Assuming we don't have to generate an SSH key, it takes ~3 minutes to boot into 
 
 ## Usage
 
-* Setup a webserver somewhere
+* Generate users and passwords for each unit you wish to provision, and configure a suitable SCP server
 * Place some configs on there, named as $MAC.cfg where MAC is the mac address of your 0/0 interface, normalised to all caps, no dots.
 * Replace the vars in `library/autoprov-env.tcl`
 * Create a tar file from the library (See `library/build-tar.sh`)
@@ -80,46 +84,22 @@ Assuming we don't have to generate an SSH key, it takes ~3 minutes to boot into 
 
 `configure replace` is a useful command that can overwrite the running configuration from a file/http/tftp etc. It does so by calculating the diff and applying the relevant commands. However it doesn't seem to be possible to call `configure replace` directly from TCL. Chris J Hart has previously blogged about this limitation [here](https://chrisjhart.com/Cisco-TCL-Script-Not-Running-Configure-Replace/).
 
-However you can call it from an EEM applet:
+However you can call it from an EEM applet, so we use TCL to run the applet and capture the output:
 
 ```
 event manager applet CONFIG-REPLACE
- event none
- action 10 cli command "enable"
- action 20 cli command "terminal length 0"
- action 30 set _url "$_none_arg1"
- action 40 cli command "configure replace $_url force"
- action 45 set _out "$_cli_result"
- action 46 regexp "([Ee][Rr][Rr][Oo][Rr]|[Tt]he input file is not a valid config file)" "$_out" _m
- action 47 if $_regexp_result eq 1
- action 48  syslog msg "CFG-REPLACE FAILED. Scheduling retry in 5 minutes. Output: $_out"
- action 49  cli command "configure terminal"
- action 50  cli command "event manager applet BOOTSTRAP-AUTOPROV"
- action 51  cli command "event timer watchdog time 300 maxrun 300000"
- action 52  cli command "no action 0.2"
- action 53  cli command "no action 0.3"
- action 54  cli command "end"
- action 55 end
- action 60 syslog msg "CFG-REPLACE output: $_out"
+    event none maxrun 300000
+    action 10 cli command "enable"
+    action 20 cli command "terminal length 0"
+    action 30 set _url "$_none_arg1"
+    action 40 cli command "configure replace $_url force"
+    action 50 set _out "$_cli_result"
+    action 60 regexp "([Ee][Rr][Rr][Oo][Rr]|[Tt]he input file is not a valid config file|[Ff]ailed)" "$_out" _m
+    action 70 if $_regexp_result eq "1"
+    action 80  puts "CFG-REPLACE FAILED. Output: $_out"
+    action 90  syslog msg "CFG-REPLACE FAILED. Output: $_out"
+    action 100 end
 ```
-
-Running it looks something like this:
-
-```
-router#event manager run CONFIG-REPLACE http://100.100.100.100:8080/autoprov/startup/B838614C2839.cfg 
-router#
-Feb 14 18:06:15.610: Rollback:Acquired Configuration lock.
-router#
-Feb 14 18:06:17.758: %HA_EM-6-LOG: CONFIG-REPLACE: CFG-REPLACE output:
-Loading http://100.100.100.100:8080/autoprov/startup/B838614C2839.cfg 
-Loading http://100.100.100.100:8080/autoprov/startup/B838614C2839.cfg 
-
-Total number of passes: 1
-Rollback Done
-
-```
-
-If it fails it will reconfigure BOOTSTRAP-AUTOPROV to re-try every 5 minutes.
 
 ## License
 
