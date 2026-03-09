@@ -68,12 +68,12 @@ proc create_config_replace_applet {} {
         {action 20 cli command "terminal length 0"} \
         {action 30 set _url "$_none_arg1"} \
         {action 40 cli command "configure replace $_url force"} \
-        {action 45 set _out "$_cli_result"} \
-        {action 46 regexp "([Ee][Rr][Rr][Oo][Rr]|[Tt]he input file is not a valid config file|[Ff]ailed)" "$_out" _m} \
-        {action 47 if $_regexp_result eq "1"} \
-        {action 48  puts "CFG-REPLACE FAILED. Output: $_out"} \
-        {action 49  syslog msg "CFG-REPLACE FAILED. Output: $_out"} \
-        {action 56 end} \
+        {action 50 set _out "$_cli_result"} \
+        {action 60 regexp "([Ee][Rr][Rr][Oo][Rr]|[Tt]he input file is not a valid config file|[Ff]ailed)" "$_out" _m} \
+        {action 70 if $_regexp_result eq "1"} \
+        {action 80  puts "CFG-REPLACE FAILED. Output: $_out"} \
+        {action 90  syslog msg "CFG-REPLACE FAILED. Output: $_out"} \
+        {action 100 end} \
     ]
 
     foreach param $cmd_params {
