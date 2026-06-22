@@ -42,14 +42,13 @@ proc get_interface {model} {
     }
 }
 
-# Extracts the BIA MAC address for the supplied interface
-proc get_mac {ifc} {
-    set out [exec show interfaces $ifc | include bia]
-    set pat {([0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]\.[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]\.[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])}
-    if {[regexp $pat $out -> mac]} {
-        set mac [string map { . "" } $mac]
-        set mac [string toupper $mac]
-        return $mac
+# Extracts the chassis serial number from show inventory
+proc get_serial {} {
+    if {[catch {exec "show inventory"} output]} {
+        return ""
+    }
+    if {[regexp {SN: (\S+)} $output -> serial]} {
+        return [string toupper $serial]
     }
     return ""
 }

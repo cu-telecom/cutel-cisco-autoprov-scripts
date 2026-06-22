@@ -20,33 +20,27 @@ if {$path == ""} {
     return 1
 }
 
-set interface [get_interface $model]
-if {$interface == ""} {
-    exec "send log ERROR: Unable to parse interface"
-    return 1
-}
-
-set mac [get_mac "${interface}0/0"]
-if {$mac == ""} {
-    exec "send log ERROR: Unable to parse MAC"
+set serial [get_serial]
+if {$serial == ""} {
+    exec "send log ERROR: Unable to parse serial"
     exit
 }
 
-exec "send log model: $model path: $path interface: $interface MAC: $mac"
+exec "send log model: $model path: $path serial: $serial"
 
 # Manage SSH
 manage_ssh
 
 # Manage the SCP password
-manage_scp_pass "${scp_password_url}/${mac}"
+manage_scp_pass "${scp_password_url}/${serial}"
 
 # Are we using HTTP or SCP to download the config?
 if {[string equal -nocase $url_scheme http]} {
-    set download_url "http://${http_url_prefix}${mac}.cfg"
+    set download_url "http://${http_url_prefix}${serial}.cfg"
 } else {
-    set scp_user "u[string tolower $mac]"
+    set scp_user "u[string tolower $serial]"
     set scp_password [read_scp_pass]
-    set download_url "scp://${scp_user}:${scp_password}@${scp_url_prefix}${mac}.cfg"
+    set download_url "scp://${scp_user}:${scp_password}@${scp_url_prefix}${serial}.cfg"
 }
 
 exec "send log Mode selected: ${mode}"
@@ -77,7 +71,7 @@ if {[string equal -nocase $mode stateless]} {
     # Disable prompting when we copy run start
     ios_config "file prompt quiet"
 
-    # Fetch the startup config using the MAC e.g http://autoprov.cutel.net/startup/$mac.cfg
+    # Fetch the startup config using the serial e.g http://autoprov.cutel.net/startup/$serial.cfg
     exec "send log Downloading the startup-config with ${url_scheme} and saving to startup-config"
     set rc [ios_copy ${download_url} startup-config]
 
