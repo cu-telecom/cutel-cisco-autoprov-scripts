@@ -2,11 +2,8 @@ source "tmpsys:lib/tcl/http.tcl"
 source library/autoprov-env.tcl
 source library/var-parsers.tcl
 
-# Return the IP address of the primary interface (Fa0/0 or Gi0/0, model dependent)
-proc get_primary_ip {} {
-    set model [get_model]
-    set iface "[get_interface $model]0/0"
-
+# Extracts the "Internet address" IP from `show ip interface <iface>` output
+proc _get_interface_ip {iface} {
     if {[catch {exec "show ip interface $iface | include Internet address"} out]} {
         return ""
     }
@@ -16,6 +13,20 @@ proc get_primary_ip {} {
     }
 
     return ""
+}
+
+# Return the IP address of the primary interface. Tries BVI1 first (bridged
+# devices), falling back to Fa0/0 or Gi0/0 (model dependent)
+proc get_primary_ip {} {
+    set ip [_get_interface_ip "BVI1"]
+    if {$ip != ""} {
+        return $ip
+    }
+
+    set model [get_model]
+    set iface "[get_interface $model]0/0"
+
+    return [_get_interface_ip $iface]
 }
 
 # Return the configured hostname

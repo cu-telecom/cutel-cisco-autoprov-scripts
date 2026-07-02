@@ -16,5 +16,5 @@ set scp_url_prefix "ztp.cutel.net/"
 # Service discovery registration host[:port] and key. Don't include the scheme!
 # Full URL built as: http://${sd_url_prefix}/register/${sd_key}?target=host[:port][&label.foo=bar...]
 set sd_url_prefix "sd.cutel.net:8080"
-set sd_key "4zrexwgB7W61Ixce"
+set sd_key "8rjx1EuU9Z7usHWw"
 
