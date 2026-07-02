@@ -15,7 +15,7 @@ event manager applet BOOTSTRAP-AUTOPROV
  action 0.0 cli command "enable"
  action 0.1 cli command "terminal length 0"
  action 0.2 syslog msg "Downloading tcl library"
- action 0.3 cli command "archive tar /xtract http://100.64.0.1:8080/library.tar library"
+ action 0.3 cli command "archive tar /xtract http://ztp.cutel.net/library.tar library"
  action 0.4 syslog msg "Running setup-autoprov.tcl"
  action 0.5 cli command "tclsh library/setup-autoprov.tcl"
  ! The applet will only get this far if setup-autoprov fails
