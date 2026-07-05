@@ -22,7 +22,7 @@ proc get_path {model} {
     # Normalise input (trim + uppercase just in case)
     set model [string toupper [string trim $model]]
 
-    if {$model == "VG310"} {
+    if {$model == "VG310" || $model == "VG204" || $model == "VG202"} {
         return "flash0:/"
     } else {
         return "slot0:/"
